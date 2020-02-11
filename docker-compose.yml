@@ -1,0 +1,44 @@
+version: '3.7'
+
+networks:
+  redis_net:
+    name: redis_net
+
+services:
+# redis
+  redis:
+    restart: always
+    image: redis
+    container_name: cache
+    ports:
+      - 6379:6379 
+    volumes:
+    - ./.data:/data
+    networks:
+    - redis_net
+# 本地 express
+  redis_express:
+    build: ./
+    container_name: redis_express
+    volumes:
+      - ./:/app
+    ports:
+      - 3000:3000
+    links:
+      - redis
+    environment:
+      - REDIS_URL=redis://cache
+      - NODE_ENV=development
+      - PORT=3000
+    networks:
+      - redis_net
+# redis 監控
+  redis-stat:
+    restart: always
+    image: insready/redis-stat
+    container_name: redis_stat
+    command: --server cache:6379 5 
+    ports:
+      - "63770:63790"
+    networks:
+      - redis_net
